@@ -1,6 +1,7 @@
--- BETA_Empereanimate_4.1 ( BE4.1 )
+-- BETA_Empereanimate_4.2 ( BE4.2 )
 -- Full Beta, bug fix ( blacklist ), RELEASE_ IS SOON!! :party:
 -- major flaw fixed
+-- mobile fling support
 
 if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -89,10 +90,15 @@ local StarterGui = game:FindFirstChildOfClass("StarterGui")
 local BindableEvent = Instancenew("BindableEvent")
 
 local UserInputService = game:FindFirstChildOfClass("UserInputService")
-local MouseButton1 = Enum.UserInputType.MouseButton1
+local UserInputType = Enum.UserInputType
+
+local MouseButton1 = UserInputType.MouseButton1
+local Touch = UserInputType.Touch
 
 local InputBegan = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
-	if not GameProcessed and Input.UserInputType == MouseButton1 then
+	local Type = Input.UserInputType
+	
+	if not GameProcessed and ( Type == MouseButton1 or Type == Touch ) then
 		local Target = Mouse.Target
 
 		if Target and not Target.Anchored and not Target:IsDescendantOf(CharacterClone) and not Target:IsDescendantOf(Character) and not tablefind(Fling, Target) then
@@ -241,18 +247,7 @@ Attachment("RootAttachment", CFramenew(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1), Huma
 local Humanoid = Instancenew("Humanoid", CharacterClone)
 Instancenew("Animator", Humanoid)
 
-if Character then
-	local Animate = FindInstance(Character, "LocalScript", "Animate")
-
-	if Animate then
-		local Clone = Animate:Clone()
-		Clone.Enabled = false
-		Clone.Parent = CharacterClone
-		Clone.Enabled = true
-	else
-		Instancenew("LocalScript", CharacterClone).Name = "Animate"
-	end
-end
+Instancenew("LocalScript", CharacterClone).Name = "Animate"
 
 CharacterClone.PrimaryPart = Head
 CharacterClone.Parent = Workspace

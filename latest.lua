@@ -1,5 +1,6 @@
--- BETA_Empereanimate_4 ( BE4 )
+-- BETA_Empereanimate_4.1 ( BE4.1 )
 -- Full Beta, bug fix ( blacklist ), RELEASE_ IS SOON!! :party:
+-- major flaw fixed
 
 if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -193,9 +194,12 @@ face.Parent = Head
 	{ Mesh = "11159370334", Texture = "11159285454", Instance = LeftLeg, CFrame = CFrameAngles(0, 1.57, 1.57) },
 }]]
 
-local AccessoryTable = {
-	{ Mesh = "14768684979", Instance = RightArm },
-	{ Mesh = "14768684979", Instance = LeftArm }
+local AccessoryTable = { 
+	{ Mesh = "14085008200", Texture = "14085008225", Instance = Torso },
+	{ Mesh = "13610799467", Texture = "13610799583", Instance = RightArm, CFrame = CFrameAngles(1.57, 0, 0) },
+	{ Mesh = "11159370334", Texture = "11159284657", Instance = LeftArm, CFrame = CFrameAngles(0, 1.57, 1.57) },
+	{ Mesh = "11263221350", Texture = "11263219250", Instance = RightLeg, CFrame = CFrameAngles(0, - 1.57, 1.57) },
+	{ Mesh = "11159370334", Texture = "11159285454", Instance = LeftLeg, CFrame = CFrameAngles(0, 1.57, 1.57) },
 }
 
 for _, Table in pairs(AccessoryTable) do
@@ -236,6 +240,19 @@ Attachment("RootAttachment", CFramenew(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1), Huma
 
 local Humanoid = Instancenew("Humanoid", CharacterClone)
 Instancenew("Animator", Humanoid)
+
+if Character then
+	local Animate = FindInstance(Character, "LocalScript", "Animate")
+
+	if Animate then
+		local Clone = Animate:Clone()
+		Clone.Enabled = false
+		Clone.Parent = CharacterClone
+		Clone.Enabled = true
+	else
+		Instancenew("LocalScript", CharacterClone).Name = "Animate"
+	end
+end
 
 CharacterClone.PrimaryPart = Head
 CharacterClone.Parent = Workspace
@@ -287,7 +304,7 @@ local function DescendantAdded(Instance)
 				end
 			end
 
-			tableinsert(Aligns, { Handle, CloneHandle })
+			tableinsert(Aligns, { Handle, CloneHandle, CFrameidentity })
 		end)
 	elseif Instance:IsA("JointInstance") then
 		taskspawn(function()

@@ -1,10 +1,41 @@
--- BETA_Empereanimate_2 ( BE2 )
--- Full Beta: https://discord.gg/EFReRAPETm
+-- BETA_Empereanimate_3 ( BE3 )
+-- Full Beta, fling
 
 if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
 
+local function FindInstance(Parent, ClassName, Name)
+	for _, Instance in pairs(Parent:GetChildren()) do
+		if Instance:IsA(ClassName) and Instance.Name == Name then
+			return Instance
+		end
+	end
+end
+
+local function WaitForClass(Parent, ClassName)
+	local Instance = Parent:FindFirstChildOfClass(ClassName)
+
+	while not Instance and Parent do
+		Parent.ChildAdded:Wait()
+		Instance = Parent:FindFirstChildOfClass(ClassName)
+	end
+
+	return Instance
+end
+
+local function WaitForClassOfName(Parent, ...)
+	local Instance = FindInstance(Parent, ...)
+
+	while not Instance and Parent do
+		Parent.ChildAdded:Wait()
+		Instance = FindInstance(Parent, ...)
+	end
+
+	return Instance
+end
+
+local Fling = { }
 local Aligns = { }
 local Blacklist = { }
 local Accessories = { }
@@ -16,6 +47,7 @@ local taskwait = task.wait
 local taskspawn = task.spawn
 local taskdefer = task.defer
 
+local mathabs = math.abs
 local mathcos = math.cos
 local mathrandom = math.random
 
@@ -35,6 +67,7 @@ local Vector3new = Vector3.new
 local Vector3zero = Vector3.zero
 
 local Sleep = CFrameidentity
+local Velocity = Vector3new(0, 16384, 0)
 local Angular = 0
 local Linear = 0
 
@@ -53,6 +86,30 @@ local CharacterClone = Instancenew("Model")
 
 local StarterGui = game:FindFirstChildOfClass("StarterGui")
 local BindableEvent = Instancenew("BindableEvent")
+
+local UserInputService = game:FindFirstChildOfClass("UserInputService")
+local MouseButton1 = Enum.UserInputType.MouseButton1
+
+local InputBegan = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
+	if not GameProcessed and Input.UserInputType == MouseButton1 then
+		local Target = Mouse.Target
+		
+		if Target and not Target.Anchored and not Target:IsDescendantOf(CharacterClone) and not Target:IsDescendantOf(Character) and not tablefind(Fling, Target) then
+			local Parent = Target.Parent
+			
+			if Parent:IsA("Model") and Parent ~= Character and Parent:FindFirstChildOfClass("Humanoid") then
+				local HumanoidRootPart = FindInstance(Parent, "BasePart", "HumanoidRootPart") or FindInstance(Parent, "BasePart", "Torso") or FindInstance(Parent, "BasePart", "Head")
+				
+				if HumanoidRootPart and not tablefind(Fling, HumanoidRootPart) then
+					tableinsert(Fling, HumanoidRootPart)
+					return
+				end
+			end
+			
+			tableinsert(Fling, Target)
+		end
+	end
+end)
 
 local function Part(Name, Size)
 	local Part = Instancenew("Part")
@@ -84,36 +141,6 @@ local function Attachment(Name, CFrame, Parent)
 
 	tableinsert(Attachments, Attachment)
 	return Attachment
-end
-
-local function FindInstance(Parent, ClassName, Name)
-	for _, Instance in pairs(Parent:GetChildren()) do
-		if Instance:IsA(ClassName) and Instance.Name == Name then
-			return Instance
-		end
-	end
-end
-
-local function WaitForClass(Parent, ClassName)
-	local Instance = Parent:FindFirstChildOfClass(ClassName)
-
-	while not Instance and Parent do
-		Parent.ChildAdded:Wait()
-		Instance = Parent:FindFirstChildOfClass(ClassName)
-	end
-
-	return Instance
-end
-
-local function WaitForClassOfName(Parent, ...)
-	local Instance = FindInstance(Parent, ...)
-
-	while not Instance and Parent do
-		Parent.ChildAdded:Wait()
-		Instance = FindInstance(Parent, ...)
-	end
-
-	return Instance
 end
 
 local LimbSize = Vector3new(1, 2, 1)
@@ -257,7 +284,7 @@ local function DescendantAdded(Instance)
 					end
 				end
 			end
-			
+
 			tableinsert(Aligns, { Handle, Part1, CFrame })
 		end)
 	elseif Instance:IsA("JointInstance") then
@@ -284,9 +311,9 @@ local function CharacterAdded(Character)
 		for _, Accessory in pairs(Accessories) do
 			Accessory:Destroy()
 		end
-		
+
 		local CurrentCameraCFrame = CurrentCamera.CFrame
-		
+
 		LocalPlayer.Character = CharacterClone
 		CurrentCamera.CameraSubject = Humanoid
 
@@ -295,11 +322,50 @@ local function CharacterAdded(Character)
 			CurrentCamera.CFrame = CurrentCameraCFrame
 		end)
 		
-		WaitForClassOfName(Character, "BasePart", "HumanoidRootPart").CFrame = CFramenew(HumanoidRootPart.Position + Vector3new(mathrandom(- 16, 16), 0, mathrandom(- 16, 16)))
+		local CharacterHumanoidRootPart = WaitForClassOfName(Character, "BasePart", "HumanoidRootPart")
 		
-		PostSimulation:Wait()
+		for Index, Value in pairs(Fling) do
+			local BasePart = nil
+			
+			if typeof(Value) == "Instance" then 
+				if Value:IsA("BasePart") then
+					BasePart = Value
+				elseif Value:IsA("Humanoid") then
+					local Model = Value.Parent
+					
+					if Model ~= Character and Model:IsA("Model") then
+						BasePart = FindInstance(Model, "BasePart", "HumanoidRootPart") or FindInstance(Model, "BasePart", "Head") or Model:FindFirstChildOfClass("BasePart")
+					end
+				elseif Value:IsA("Model") and Value ~= Character then
+					BasePart = FindInstance(Value, "BasePart", "HumanoidRootPart") or FindInstance(Value, "BasePart", "Head") or Value:FindFirstChildOfClass("BasePart")
+				end
+			end
+			
+			if BasePart then
+				local clock = osclock()
+
+				while CharacterHumanoidRootPart and BasePart and osclock() - clock <= 1 and BasePart.AssemblyLinearVelocity.Magnitude <= 60 do
+					CharacterHumanoidRootPart.AssemblyAngularVelocity = Velocity
+					CharacterHumanoidRootPart.AssemblyLinearVelocity = Velocity
+
+					CharacterHumanoidRootPart.CFrame = BasePart.CFrame + Vector3new(0, - 1, 0)
+					PostSimulation:Wait()
+				end
+			end
+		end
+		
+		tableclear(Fling)
+		
+		if CharacterHumanoidRootPart then
+			CharacterHumanoidRootPart.AssemblyAngularVelocity = Vector3zero
+			CharacterHumanoidRootPart.AssemblyLinearVelocity = Vector3zero
+			
+			CharacterHumanoidRootPart.CFrame = CFramenew(HumanoidRootPart.Position + Vector3new(mathrandom(- 32, 32), 0, mathrandom(- 32, 32)))
+			PostSimulation:Wait()
+		end
+		
 		Character:BreakJoints()
-		
+
 		for _, Instance in pairs(Character:GetDescendants()) do
 			DescendantAdded(Instance)
 		end
@@ -348,7 +414,7 @@ local Connection = game:FindFirstChildOfClass("RunService").PostSimulation:Conne
 	if sethiddenproperty then
 		sethiddenproperty(LocalPlayer, "SimulationRadius", 10000000)
 	end
-	
+
 	StarterGui:SetCore("ResetButtonCallback", BindableEvent) -- This is if it gets overriden, just like in MyWorld testing place.
 end)
 
@@ -362,13 +428,13 @@ CharacterClone:GetPropertyChangedSignal("Parent"):Connect(function()
 	if not CharacterClone.Parent then
 		Added:Disconnect()
 		Connection:Disconnect()
-		
+
 		CharacterClone:Destroy()
-		
+
 		if BindableEvent then
 			BindableEvent:Destroy()
 		end
-		
+
 		StarterGui:SetCore("ResetButtonCallback", true)
 	end
 end)

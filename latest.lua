@@ -1,5 +1,5 @@
--- BETA_Empereanimate_3 ( BE3 )
--- Full Beta, fling
+-- BETA_Empereanimate_4 ( BE4 )
+-- Full Beta, bug fix ( blacklist ), RELEASE_ IS SOON!! :party:
 
 if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -93,19 +93,19 @@ local MouseButton1 = Enum.UserInputType.MouseButton1
 local InputBegan = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
 	if not GameProcessed and Input.UserInputType == MouseButton1 then
 		local Target = Mouse.Target
-		
+
 		if Target and not Target.Anchored and not Target:IsDescendantOf(CharacterClone) and not Target:IsDescendantOf(Character) and not tablefind(Fling, Target) then
 			local Parent = Target.Parent
-			
+
 			if Parent:IsA("Model") and Parent ~= Character and Parent:FindFirstChildOfClass("Humanoid") then
 				local HumanoidRootPart = FindInstance(Parent, "BasePart", "HumanoidRootPart") or FindInstance(Parent, "BasePart", "Torso") or FindInstance(Parent, "BasePart", "Head")
-				
+
 				if HumanoidRootPart and not tablefind(Fling, HumanoidRootPart) then
 					tableinsert(Fling, HumanoidRootPart)
 					return
 				end
 			end
-			
+
 			tableinsert(Fling, Target)
 		end
 	end
@@ -185,12 +185,17 @@ local face = Instancenew("Decal")
 face.Name = "face"
 face.Parent = Head
 
-local AccessoryTable = { 
+--[[local AccessoryTable = { 
 	{ Mesh = "14085008200", Texture = "", Instance = Torso },
 	{ Mesh = "13610799467", Texture = "13610799583", Instance = RightArm, CFrame = CFrameAngles(1.57, 0, 0) },
 	{ Mesh = "11159370334", Texture = "11159284657", Instance = LeftArm, CFrame = CFrameAngles(0, 1.57, 1.57) },
 	{ Mesh = "11263221350", Texture = "11263219250", Instance = RightLeg, CFrame = CFrameAngles(0, - 1.57, 1.57) },
 	{ Mesh = "11159370334", Texture = "11159285454", Instance = LeftLeg, CFrame = CFrameAngles(0, 1.57, 1.57) },
+}]]
+
+local AccessoryTable = {
+	{ Mesh = "14768684979", Instance = RightArm },
+	{ Mesh = "14768684979", Instance = LeftArm }
 }
 
 for _, Table in pairs(AccessoryTable) do
@@ -266,9 +271,6 @@ local function DescendantAdded(Instance)
 
 			tableinsert(Accessories, Clone)
 
-			local Part1 = CloneHandle
-			local CFrame = CFrameidentity
-
 			local IsAMeshPart = CloneHandle:IsA("MeshPart")
 			local Mesh = IsAMeshPart and CloneHandle or WaitForClass(CloneHandle, "SpecialMesh")
 			local Id = IsAMeshPart and "TextureID" or "TextureId"
@@ -278,14 +280,14 @@ local function DescendantAdded(Instance)
 
 				if Instance then
 					if stringmatch(Mesh.MeshId, Table.Mesh) and stringmatch(Mesh[Id], Table.Texture) and not tablefind(Blacklist, Instance) then
-						Part1 = Instance
-						CFrame = Table.CFrame or CFrame
 						tableinsert(Blacklist, Instance)
+						tableinsert(Aligns, { Handle, Instance, Table.CFrame or CFrameidentity })
+						return
 					end
 				end
 			end
 
-			tableinsert(Aligns, { Handle, Part1, CFrame })
+			tableinsert(Aligns, { Handle, CloneHandle })
 		end)
 	elseif Instance:IsA("JointInstance") then
 		taskspawn(function()
@@ -321,18 +323,18 @@ local function CharacterAdded(Character)
 			CurrentCamera:GetPropertyChangedSignal("CFrame"):Wait()
 			CurrentCamera.CFrame = CurrentCameraCFrame
 		end)
-		
+
 		local CharacterHumanoidRootPart = WaitForClassOfName(Character, "BasePart", "HumanoidRootPart")
-		
+
 		for Index, Value in pairs(Fling) do
 			local BasePart = nil
-			
+
 			if typeof(Value) == "Instance" then 
 				if Value:IsA("BasePart") then
 					BasePart = Value
 				elseif Value:IsA("Humanoid") then
 					local Model = Value.Parent
-					
+
 					if Model ~= Character and Model:IsA("Model") then
 						BasePart = FindInstance(Model, "BasePart", "HumanoidRootPart") or FindInstance(Model, "BasePart", "Head") or Model:FindFirstChildOfClass("BasePart")
 					end
@@ -340,7 +342,7 @@ local function CharacterAdded(Character)
 					BasePart = FindInstance(Value, "BasePart", "HumanoidRootPart") or FindInstance(Value, "BasePart", "Head") or Value:FindFirstChildOfClass("BasePart")
 				end
 			end
-			
+
 			if BasePart then
 				local clock = osclock()
 
@@ -353,17 +355,17 @@ local function CharacterAdded(Character)
 				end
 			end
 		end
-		
+
 		tableclear(Fling)
-		
+
 		if CharacterHumanoidRootPart then
 			CharacterHumanoidRootPart.AssemblyAngularVelocity = Vector3zero
 			CharacterHumanoidRootPart.AssemblyLinearVelocity = Vector3zero
-			
+
 			CharacterHumanoidRootPart.CFrame = CFramenew(HumanoidRootPart.Position + Vector3new(mathrandom(- 32, 32), 0, mathrandom(- 32, 32)))
 			PostSimulation:Wait()
 		end
-		
+
 		Character:BreakJoints()
 
 		for _, Instance in pairs(Character:GetDescendants()) do

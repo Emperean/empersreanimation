@@ -1,7 +1,7 @@
--- BETA_Empereanimate_4.2 ( BE4.2 )
--- Full Beta, bug fix ( blacklist ), RELEASE_ IS SOON!! :party:
--- major flaw fixed
--- mobile fling support
+-- BETA_Empereanimate_5 ( BE5 )
+-- Reworked hat refresh system
+-- template coming soon <3
+-- WE ARE SO CLOSE TO FULL RELEASE!
 
 if not game:IsLoaded() then
 	game.Loaded:Wait()
@@ -69,7 +69,7 @@ local Vector3new = Vector3.new
 local Vector3zero = Vector3.zero
 
 local Sleep = CFrameidentity
-local Velocity = Vector3new(0, 16384, 0)
+local Velocity = Vector3new(16384, 16384, 16384)
 local Angular = 0
 local Linear = 0
 
@@ -81,7 +81,9 @@ local Players = game:FindFirstChildOfClass("Players")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
-local PostSimulation = game:FindFirstChildOfClass("RunService").PostSimulation
+local RunService = game:FindFirstChildOfClass("RunService")
+local PreSimulation = RunService.PreSimulation
+local PostSimulation = RunService.PostSimulation
 
 local Character = LocalPlayer.Character
 local CharacterClone = Instancenew("Model")
@@ -97,7 +99,7 @@ local Touch = UserInputType.Touch
 
 local InputBegan = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
 	local Type = Input.UserInputType
-	
+
 	if not GameProcessed and ( Type == MouseButton1 or Type == Touch ) then
 		local Target = Mouse.Target
 
@@ -192,14 +194,6 @@ local face = Instancenew("Decal")
 face.Name = "face"
 face.Parent = Head
 
---[[local AccessoryTable = { 
-	{ Mesh = "14085008200", Texture = "", Instance = Torso },
-	{ Mesh = "13610799467", Texture = "13610799583", Instance = RightArm, CFrame = CFrameAngles(1.57, 0, 0) },
-	{ Mesh = "11159370334", Texture = "11159284657", Instance = LeftArm, CFrame = CFrameAngles(0, 1.57, 1.57) },
-	{ Mesh = "11263221350", Texture = "11263219250", Instance = RightLeg, CFrame = CFrameAngles(0, - 1.57, 1.57) },
-	{ Mesh = "11159370334", Texture = "11159285454", Instance = LeftLeg, CFrame = CFrameAngles(0, 1.57, 1.57) },
-}]]
-
 local AccessoryTable = { 
 	{ Mesh = "14085008200", Texture = "14085008225", Instance = Torso },
 	{ Mesh = "13610799467", Texture = "13610799583", Instance = RightArm, CFrame = CFrameAngles(1.57, 0, 0) },
@@ -256,50 +250,87 @@ local function DescendantAdded(Instance)
 	if Instance:IsA("Accessory") then
 		taskspawn(function()
 			local Handle = WaitForClassOfName(Instance, "BasePart", "Handle")
-			local Attachment = WaitForClass(Handle, "Attachment")
+			local MeshPart = Handle:IsA("MeshPart")
+			local Id = MeshPart and "TextureID" or "TextureId"
+			
+			local Mesh = MeshPart and Handle or WaitForClass(Handle, "SpecialMesh")
+			
+			local Create = true
+			
+			for _, Table in pairs(Accessories) do
+				local TableMesh = Table.Mesh
+				
+				if TableMesh[Id] == Mesh[Id] and TableMesh.MeshId == Mesh.MeshId then
+					local TableHandle = Table.Handle
 
-			local Clone = Instance:Clone()
+					if TableHandle then
+						for _, Table in pairs(AccessoryTable) do
+							local Instance = Table.Instance
 
-			local CloneHandle = FindInstance(Clone, "BasePart", "Handle")
-			CloneHandle.Transparency = 1
-			CloneHandle:BreakJoints()
+							if Instance then
+								if stringmatch(Mesh.MeshId, Table.Mesh) and stringmatch(Mesh[Id], Table.Texture) and not tablefind(Blacklist, Instance) then
+									tableinsert(Blacklist, Instance)
+									tableinsert(Aligns, { Handle, Instance, Table.CFrame or CFrameidentity })
+									return
+								end
+							end
+						end
 
-			local AccessoryWeld = Instancenew("Weld")
-			AccessoryWeld.Name = "AccessoryWeld"
-			AccessoryWeld.Part0 = CloneHandle
-			AccessoryWeld.C0 = Attachment.CFrame
-
-			local Name = Attachment.Name
-
-			for _, TableAttachment in pairs(Attachments) do
-				if TableAttachment.Name == Name then
-					AccessoryWeld.Part1 = TableAttachment.Parent
-					AccessoryWeld.C1 = TableAttachment.CFrame
+						tableinsert(Aligns, { Handle, TableHandle, CFrameidentity })
+					end
+					
+					Create = false
 				end
 			end
-
-			AccessoryWeld.Parent = CloneHandle
-			Clone.Parent = CharacterClone
-
-			tableinsert(Accessories, Clone)
-
-			local IsAMeshPart = CloneHandle:IsA("MeshPart")
-			local Mesh = IsAMeshPart and CloneHandle or WaitForClass(CloneHandle, "SpecialMesh")
-			local Id = IsAMeshPart and "TextureID" or "TextureId"
-
-			for _, Table in pairs(AccessoryTable) do
-				local Instance = Table.Instance
-
-				if Instance then
-					if stringmatch(Mesh.MeshId, Table.Mesh) and stringmatch(Mesh[Id], Table.Texture) and not tablefind(Blacklist, Instance) then
-						tableinsert(Blacklist, Instance)
-						tableinsert(Aligns, { Handle, Instance, Table.CFrame or CFrameidentity })
-						return
+			
+			if Create then
+				Instance.Archivable = true
+				
+				for _, Instance in pairs(Instance:GetDescendants()) do
+					Instance.Archivable = true
+				end
+				
+				local AccessoryClone = Instance:Clone()
+				
+				local HandleClone = FindInstance(AccessoryClone, "BasePart", "Handle")
+				HandleClone.Transparency = 1
+				HandleClone:BreakJoints()
+					
+				local MeshClone = MeshPart and HandleClone or WaitForClass(HandleClone, "SpecialMesh")
+				local Attachment = WaitForClass(HandleClone, "Attachment")
+				
+				local Weld = Instancenew("Weld")
+				Weld.Name = "AccessoryWeld"
+				Weld.Part0 = HandleClone
+				Weld.C0 = Attachment.CFrame
+				
+				local Name = Attachment.Name
+				
+				for _, TableAttachment in pairs(Attachments) do
+					if TableAttachment.Name == Name then
+						Weld.Part1 = TableAttachment.Parent
+						Weld.C1 = TableAttachment.CFrame
 					end
 				end
-			end
+				
+				Weld.Parent = HandleClone
+				AccessoryClone.Parent = CharacterClone
+				
+				for _, Table in pairs(AccessoryTable) do
+					local Instance = Table.Instance
 
-			tableinsert(Aligns, { Handle, CloneHandle, CFrameidentity })
+					if Instance then
+						if stringmatch(Mesh.MeshId, Table.Mesh) and stringmatch(Mesh[Id], Table.Texture) and not tablefind(Blacklist, Instance) then
+							tableinsert(Blacklist, Instance)
+							tableinsert(Aligns, { Handle, Instance, Table.CFrame or CFrameidentity })
+							return
+						end
+					end
+				end
+				
+				tableinsert(Aligns, { Handle, HandleClone, CFrameidentity })
+				tableinsert(Accessories, { Handle = HandleClone, Mesh = MeshClone })
+			end
 		end)
 	elseif Instance:IsA("JointInstance") then
 		taskspawn(function()
@@ -322,10 +353,6 @@ local function CharacterAdded(Character)
 		tableclear(Aligns)
 		tableclear(Blacklist)
 
-		for _, Accessory in pairs(Accessories) do
-			Accessory:Destroy()
-		end
-
 		local CurrentCameraCFrame = CurrentCamera.CFrame
 
 		LocalPlayer.Character = CharacterClone
@@ -335,7 +362,19 @@ local function CharacterAdded(Character)
 			CurrentCamera:GetPropertyChangedSignal("CFrame"):Wait()
 			CurrentCamera.CFrame = CurrentCameraCFrame
 		end)
-
+		
+		taskspawn(function()
+			while Character do
+				for _, BasePart in pairs(Character:GetDescendants()) do
+					if BasePart:IsA("BasePart") then
+						BasePart.CanCollide = false
+					end
+				end				
+				
+				PreSimulation:Wait()
+			end
+		end)
+		
 		local CharacterHumanoidRootPart = WaitForClassOfName(Character, "BasePart", "HumanoidRootPart")
 
 		for Index, Value in pairs(Fling) do

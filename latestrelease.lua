@@ -438,11 +438,10 @@ local function Reanimate()
 		end
 
 		local clock = osclock()
-		local cosclock = mathcos(clock * 15)
 
-		Linear = 27 + cosclock
-		local Axis = 0.0075 * cosclock
-		Sleep = CFramenew(0, 0, 0) * CFrameAngles(Axis, 0, 0)
+		Linear = 28 + mathcos(clock)
+		local Axis = 0.0075 * mathcos(clock * 15)
+		Sleep = CFramenew(0, 0, Axis)
 
 		for Index, Table in pairs(Aligns) do
 			Align(Table.Part0, Table.Part1, Table.CFrame)
